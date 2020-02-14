@@ -13,12 +13,13 @@ print(device)
 NOISE_DIM = 96
 NUM_TRAIN = 50
 batch_size = 32
-sample_dir = "data/fake_samples"
-if not os.path.exists(sample_dir):
-    os.makedirs(sample_dir)
+fake_images_dir = "../Gan_mnist/data/fake_images"
+mnist_images_dir = "../Gan_mnist/data/mnist"
+if not os.path.exists(fake_images_dir):
+    os.makedirs(fake_images_dir)
 else:
-    shutil.rmtree(sample_dir)
-    os.makedirs(sample_dir)
+    shutil.rmtree(fake_images_dir)
+    os.makedirs(fake_images_dir)
 
 
 class Generator(nn.Module):
@@ -102,7 +103,7 @@ transform = transforms.Compose([
     transforms.Normalize(mean=(0.5,),
                          std=(0.5,))])
 
-mnist = torchvision.datasets.MNIST(root='data/mnist',
+mnist = torchvision.datasets.MNIST(root=mnist_images_dir,
                                    train=True,
                                    transform=transform,
                                    download=True)
@@ -123,31 +124,43 @@ for epoch in range(NUM_TRAIN):
     count = 0
     for i, (images, _) in enumerate(data_loader):
         count = count + 1
-        images = images.reshape(batch_size, 1,28,28).to(device)
+        images = images.reshape(batch_size, 1, 28, 28).to(device)
+
+        # ---------------Train Discriminator -------start------------#
         real_labels = torch.ones(batch_size, 1).to(device)
         fake_labels = torch.zeros(batch_size, 1).to(device)
-
-        # sample mini batch of m examples from true distribution
+        # sample mini batch of m examples from true distribution,
+        # feed real images into discriminator, output the labels of real images
         rd_output = D(images)
         # sample m noise
         noise = ((torch.rand(batch_size, NOISE_DIM) - 0.5) / 0.5).to(device)
+        # Feed the noise into the generator, output fake images
         fake_images = G(noise)
+        # Feed fake images into discriminator, output labels of fake images
         fd_output = D(fake_images)
+        # Compute the loss
         d_loss = bce_loss(rd_output, real_labels) + bce_loss(fd_output, fake_labels)
+        # Back propagation and update the parameters
         reset_grad()
         d_loss.backward()
         d_optimizer.step()
+        # ---------------Train discriminator ---------end----------#
 
-        # sample mini batch of m examples from true distribution
-        rd_output = D(images)
+        # ---------------Train generator ---------start----------#
         # sample m noise
         noise = ((torch.rand(batch_size, NOISE_DIM) - 0.5) / 0.5).to(device)
+        # Feed the noise into the generator, output fake images
         fake_images = G(noise)
+        # Feed fake images into discriminator, output labels of fake images
         fd2_output = D(fake_images)
+        # Compute the loss
         g_loss = bce_loss(fd2_output, real_labels)
+        # Back propagation
         reset_grad()
         g_loss.backward()
         g_optimizer.step()
+        # ---------------Train generator --------end-----------#
+        # Print training information
         if (i % 100 == 0):
             print("epoch: {}, Iter: {}, D:{:.4}, G:{:.4},D(x): {:.2f}, D(G(z)): {:.2f}".format(epoch, i, d_loss.data,
                                                                                                g_loss.data,
@@ -156,5 +169,6 @@ for epoch in range(NUM_TRAIN):
         if i % 200 == 0:
             # Store the images
             fake_images = fake_images.reshape(batch_size, 1, 28, 28)
-            save_image(denorm(fake_images), os.path.join(sample_dir, 'fake_images-{}-{}.png'.format(epoch + 1, count)))
+            save_image(denorm(fake_images),
+                       os.path.join(fake_images_dir, 'fake_images-{}-{}.png'.format(epoch + 1, count)))
 # --------------End--------- Training ----------End
