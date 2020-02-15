@@ -2,3 +2,5 @@
 /venv/
 .idea
 /Gan_mnist/data/
+/Gan_Cartoon/data/fake_images
+/Gan_Cartoon/Image_Processing.py
