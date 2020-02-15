@@ -123,6 +123,8 @@ for epoch in range(NUM_TRAIN):
     total_step = len(data_loader)
     count = 0
     for i, (images, _) in enumerate(data_loader):
+        if len(images) is not batch_size:
+            break
         count = count + 1
         images = images.reshape(batch_size, 1, 28, 28).to(device)
 
