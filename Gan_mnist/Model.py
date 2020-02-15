@@ -12,7 +12,7 @@ print(device)
 # --------------Start--------- Define Model ----------Start
 NOISE_DIM = 96
 NUM_TRAIN = 50
-batch_size = 32
+batch_size = 128
 fake_images_dir = "../Gan_mnist/data/fake_images"
 mnist_images_dir = "../Gan_mnist/data/mnist"
 if not os.path.exists(fake_images_dir):
@@ -78,7 +78,7 @@ class Discriminator(nn.Module):
 
 G = Generator().to(device)
 D = Discriminator().to(device)
-bce_loss = nn.BCEWithLogitsLoss()
+bce_loss = nn.BCELoss()
 g_optimizer = optim.Adam(G.parameters(), lr=0.0002)
 d_optimizer = optim.Adam(D.parameters(), lr=0.0002)
 
